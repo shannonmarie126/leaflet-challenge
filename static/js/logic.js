@@ -1,4 +1,4 @@
-// Create the map object with center and zoom options.
+// Create the map object with center on Denver and set zoom.
 let myMap = L.map("map", {
   center: [39.7392, -104.9903],
   zoom: 4
@@ -26,17 +26,16 @@ d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geoj
       weight: 1
     }
   }
-
   // This function determines the color of the marker based on the depth of the earthquake.
   function getColor(depth) {
     //set a color scale for depth with red for deep and green for shallow
-    let colorScale =d3.scaleLinear().domain([0,80]).range(["#02fa1b","#f50202"])
+    let colorScale =d3.scaleLinear().domain([0,110]).range(["#02fa1b","#f50202"])
     // if depth less than 0 assign green color
     if (depth <0){
       return "#02fa1b"
     }
-    // if depth more than 100 assign red color
-    if(depth>80) {
+    // if depth more than 110 assign red color
+    if(depth>110) {
       return "#f50202"
     }
     //for depths within the range use the colorScale
@@ -51,17 +50,16 @@ d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geoj
   // Add a GeoJSON layer to the map once the file is loaded.
   L.geoJson(data, {
     // Turn each feature into a circleMarker on the map.
-    pointToLayer: function (feature, latlng) {
-      let marker =L.circleMarker(latlng, styleInfo(feature))
-      return marker
-    },
     // Set the style for each circleMarker using our styleInfo function.
-    style: styleInfo,
-    // Create a popup for each marker to display the magnitude and location of the earthquake after the marker has been created and styled
+    pointToLayer: function (feature, latlng) {
+      return L.circleMarker(latlng, styleInfo(feature))
+    },
+    // Create a popup for each marker to display the magnitude, depth and location of the earthquake 
     onEachFeature: function (feature, layer) {
-      layer.bindPopup(`<h3>${feature.properties.place}:</h3> <h3>Magnitude ${feature.properties.mag}</h3>`)
+      layer.bindPopup(`<h3>${feature.properties.place}:</h3> 
+        <h4 style="font-weight: normal";> Magnitude (${feature.properties.mag})<br> 
+        Depth (${feature.geometry.coordinates[2]} km)</h4>`)
     }
-
   }).addTo(myMap);
 
   // Create a legend control object.
@@ -72,30 +70,18 @@ d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geoj
   // Then add all the details for the legend
   legend.onAdd = function () {
     let div = L.DomUtil.create("div", "info legend");
+  // Initialize depth intervals and colors for the legend
     let limits = [0,10,30,50,70,90,110]
-
-    // Initialize depth intervals and colors for the legend
-
-
+    let colorScale =d3.scaleLinear().domain([0,110]).range(["#02fa1b","#f50202"])
     // Loop through our depth intervals to generate a label with a colored square for each interval.
-
-
-    return div;
+    for (let i = 0; i < limits.length - 1; i++) {
+      let color = colorScale((limits[i] + limits[i + 1]) / 2)
+      div.innerHTML += '<li style="background:' + color + '"></li> ' + 
+      limits[i] + (limits[i + 1] ? '&ndash;' + limits[i + 1] : '+') +'<br>';
+  }
+  return div;
   };
 
   // Finally, add the legend to the map.
-
-
+  legend.addTo(myMap)
   });
-
-  // let legend = L.control({ position: "topright" });
-  // legend.onAdd = function() {
-  //   let div = L.DomUtil.create("div", "info legend");
-  //   let limits = geojson.options.limits;
-  //   let colors = geojson.options.colors;
-  //   let labels = [];
-  //   // Add minimum and maximum.
-  //   let legendInfo =`<h1>Population with Children</br> (ages 6-17)</h1> \
-  //   <div class="labels">\
-  //    <div class="min"> ${limits[0]}</div>\
-  //    <div class="max"> ${limits[limits.length - 1]}</div><div>`
